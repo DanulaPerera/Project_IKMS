@@ -1,0 +1,127 @@
+{
+  "info": {
+    "name": "Multi-Agent RAG API",
+    "description": "Test collection for the Class 12 Multi-Agent RAG system",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "1. Index PDF Document",
+      "request": {
+        "method": "POST",
+        "header": [],
+        "body": {
+          "mode": "formdata",
+          "formdata": [
+            {
+              "key": "file",
+              "type": "file",
+              "src": [],
+              "description": "Select a PDF file to upload and index"
+            }
+          ]
+        },
+        "url": {
+          "raw": "http://localhost:8000/index-pdf",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "index-pdf"
+          ]
+        },
+        "description": "Upload a PDF document to be indexed into the Pinecone vector database.\n\n**Instructions:**\n1. Click on 'Body' tab\n2. Make sure 'form-data' is selected\n3. Click on 'Select Files' next to the 'file' key\n4. Choose your PDF file\n5. Click 'Send'\n\n**Expected Response:**\n```json\n{\n  \"filename\": \"your_document.pdf\",\n  \"chunks_indexed\": 42,\n  \"message\": \"PDF indexed successfully.\"\n}\n```"
+      },
+      "response": []
+    },
+    {
+      "name": "2. Ask Question - General",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What is this document about?\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/qa",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "qa"
+          ]
+        },
+        "description": "Ask a general question about the indexed document.\n\n**Instructions:**\n1. Make sure you've uploaded a PDF first (using the 'Index PDF Document' request)\n2. Click 'Send'\n3. Review the answer and context in the response\n\n**Expected Response:**\n```json\n{\n  \"answer\": \"AI-generated answer based on your PDF...\",\n  \"context\": \"Retrieved chunks from your PDF...\"\n}\n```"
+      },
+      "response": []
+    },
+    {
+      "name": "3. Ask Question - Specific",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What are the main topics covered in this document?\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/qa",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "qa"
+          ]
+        },
+        "description": "Ask a more specific question about the document's topics.\n\nFeel free to modify the question based on your PDF content."
+      },
+      "response": []
+    },
+    {
+      "name": "4. Test Verification Agent",
+      "request": {
+        "method": "POST",
+        "header": [
+          {
+            "key": "Content-Type",
+            "value": "application/json"
+          }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"question\": \"What information is NOT mentioned in this document?\"\n}"
+        },
+        "url": {
+          "raw": "http://localhost:8000/qa",
+          "protocol": "http",
+          "host": [
+            "localhost"
+          ],
+          "port": "8000",
+          "path": [
+            "qa"
+          ]
+        },
+        "description": "Test the verification agent by asking about something that may not be in the document.\n\nThe system should respond that it cannot answer based on available information if the topic is not covered in your PDF."
+      },
+      "response": []
+    }
+  ]
+}

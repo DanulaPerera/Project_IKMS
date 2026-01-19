@@ -2,21 +2,49 @@ from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.middleware.cors import CORSMiddleware
 
-from .models import QuestionRequest, QAResponse
+from .models import (
+    QuestionRequest,
+    QAResponse,
+    ConversationalQARequest,
+    ConversationalQAResponse,
+    ConversationHistory,
+)
 from .services.qa_service import answer_question
 from .services.indexing_service import index_pdf_file
+from .services.conversational_qa_service import (
+    answer_conversational_question,
+    get_conversation_history,
+    create_new_session,
+    clear_session_history,
+)
 
 
 app = FastAPI(
-    title="Class 12 Multi-Agent RAG Demo",
+    title="IKMS Multi-Agent RAG with Conversational Memory",
     description=(
-        "Demo API for asking questions about a vector databases paper. "
-        "The `/qa` endpoint currently returns placeholder responses and "
-        "will be wired to a multi-agent RAG pipeline in later user stories."
+        "Multi-agent RAG system with conversational memory capabilities. "
+        "Supports both single-shot QA via `/qa` and multi-turn conversations via `/qa/conversation`. "
+        "The system can understand follow-up questions and maintain context across turns."
     ),
-    version="0.1.0",
+    version="1.0.0",
 )
+
+# Add CORS middleware to allow frontend access
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Mount static files for frontend
+frontend_path = Path(__file__).parent.parent.parent / "frontend"
+if frontend_path.exists():
+    app.mount("/static", StaticFiles(directory=str(frontend_path), html=True), name="static")
 
 
 @app.exception_handler(Exception)
@@ -101,3 +129,110 @@ async def index_pdf(file: UploadFile = File(...)) -> dict:
         "chunks_indexed": chunks_indexed,
         "message": "PDF indexed successfully.",
     }
+
+
+# ==============================================================================
+# Conversational QA Endpoints
+# ==============================================================================
+
+@app.post("/qa/conversation", response_model=ConversationalQAResponse, status_code=status.HTTP_200_OK)
+async def conversational_qa(payload: ConversationalQARequest) -> ConversationalQAResponse:
+    """Submit a question in a conversational context.
+    
+    This endpoint supports multi-turn conversations with memory:
+    - If session_id is provided, continues an existing conversation
+    - If session_id is None, creates a new conversation session
+    - Agents can resolve references to previous turns (e.g., "it", "that")
+    - History is maintained across turns for context-aware answers
+    
+    The existing `/qa` endpoint remains for single-shot questions.
+    """
+    
+    question = payload.question.strip()
+    if not question:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="`question` must be a non-empty string."
+        )
+    
+    try:
+        result = answer_conversational_question(
+            question=question,
+            session_id=payload.session_id
+        )
+        
+        return ConversationalQAResponse(
+            answer=result["answer"],
+            context=result["context"],
+            session_id=result["session_id"],
+            turn_number=result["turn_number"],
+            history_used=result["history_used"]
+        )
+    except ValueError as e:
+        # Session not found or other validation error
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
+@app.get("/qa/session/{session_id}/history", response_model=ConversationHistory, status_code=status.HTTP_200_OK)
+async def get_session_history(session_id: str) -> ConversationHistory:
+    """Retrieve conversation history for a session.
+    
+    Returns all turns in the conversation with timestamps and context used.
+    Useful for displaying conversation history in the UI or debugging.
+    """
+    
+    try:
+        history_data = get_conversation_history(session_id)
+        
+        return ConversationHistory(
+            session_id=history_data["session_id"],
+            turns=history_data["turns"],
+            created_at=history_data["created_at"],
+            total_turns=history_data["total_turns"]
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+
+@app.post("/qa/session/new", status_code=status.HTTP_201_CREATED)
+async def create_session() -> dict:
+    """Create a new conversation session.
+    
+    Returns a new session_id that can be used with the /qa/conversation endpoint.
+    """
+    
+    session_id = create_new_session()
+    
+    return {
+        "session_id": session_id,
+        "message": "New conversation session created successfully."
+    }
+
+
+@app.delete("/qa/session/{session_id}/clear", status_code=status.HTTP_200_OK)
+async def clear_session(session_id: str) -> dict:
+    """Clear all history for a conversation session.
+    
+    The session ID remains valid, but all previous turns are removed.
+    This is useful for starting fresh while keeping the same session.
+    """
+    
+    try:
+        clear_session_history(session_id)
+        
+        return {
+            "session_id": session_id,
+            "message": "Session history cleared successfully."
+        }
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+

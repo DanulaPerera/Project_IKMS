@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IKMS Conversational QA Assistant</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- Header -->
+        <header class="app-header">
+            <div class="header-content">
+                <h1>
+                    <span class="logo-icon">🤖</span>
+                    IKMS Multi-Agent RAG Assistant
+                </h1>
+                <p class="subtitle">Conversational AI with Memory</p>
+            </div>
+            <div class="session-controls">
+                <button id="upload-doc-btn" class="btn-secondary" title="Upload a PDF document to index">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 2v8m0 0L5 7m3 3l3-3M3 12v2a1 1 0 001 1h8a1 1 0 001-1v-2" stroke="currentColor"
+                            stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" fill="none" />
+                    </svg>
+                    Upload Document
+                </button>
+                <button id="new-session-btn" class="btn-secondary" title="Start a new conversation">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+                    </svg>
+                    New Conversation
+                </button>
+                <button id="clear-session-btn" class="btn-secondary" title="Clear current conversation history">
+                    <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                        <path d="M2 4h12M5 4V3a1 1 0 011-1h4a1 1 0 011 1v1m2 0v10a1 1 0 01-1 1H4a1 1 0 01-1-1V4h10z" />
+                    </svg>
+                    Clear History
+                </button>
+                <input type="file" id="file-input" accept=".pdf,application/pdf" style="display: none;" />
+            </div>
+        </header>
+
+        <!-- Chat Container -->
+        <main class="chat-container">
+            <div id="messages-container" class="messages">
+                <!-- Welcome message -->
+                <div class="message assistant-message welcome">
+                    <div class="message-avatar">
+                        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                            <path
+                                d="M12 2a9 9 0 00-9 9v7a2 2 0 002 2h2v-6H5v-3a7 7 0 0114 0v3h-2v6h2a2 2 0 002-2v-7a9 9 0 00-9-9z" />
+                        </svg>
+                    </div>
+                    <div class="message-content">
+                        <p><strong>Welcome to IKMS Assistant!</strong></p>
+                        <p>I'm your intelligent document assistant powered by a multi-agent RAG system. I can remember
+                            our conversation and help you explore your documents with context-aware answers.</p>
+                        <p class="tip">💡 <em>Tip: Try asking follow-up questions like "Tell me more about that" or "How
+                                does it compare to X?"</em></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Typing Indicator -->
+            <div id="typing-indicator" class="typing-indicator hidden">
+                <div class="message-avatar">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                        <path
+                            d="M12 2a9 9 0 00-9 9v7a2 2 0 002 2h2v-6H5v-3a7 7 0 0114 0v3h-2v6h2a2 2 0 002-2v-7a9 9 0 00-9-9z" />
+                    </svg>
+                </div>
+                <div class="typing-content">
+                    <div class="typing-dots">
+                        <span></span><span></span><span></span>
+                    </div>
+                    <span class="typing-text">Assistant is thinking...</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- Input Area -->
+        <footer class="input-container">
+            <div class="input-wrapper">
+                <textarea id="question-input" placeholder="Ask a question or continue the conversation..." rows="1"
+                    autofocus></textarea>
+                <button id="send-btn" class="btn-primary" title="Send message (Enter)">
+                    <svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2">
+                        <path d="M2 10l16-8v16l-16-8z" stroke-linejoin="round" />
+                    </svg>
+                </button>
+            </div>
+            <div class="session-info">
+                <span id="session-id-display" class="info-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                        <circle cx="7" cy="7" r="6" stroke="currentColor" fill="none" />
+                        <circle cx="7" cy="7" r="2" />
+                    </svg>
+                    Session: <code>-</code>
+                </span>
+                <span id="turn-counter" class="info-item">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor">
+                        <path d="M7 1v6l3 3" />
+                    </svg>
+                    Turn: 0
+                </span>
+            </div>
+        </footer>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+
+</html>

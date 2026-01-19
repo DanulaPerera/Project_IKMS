@@ -1,0 +1,475 @@
+/* ============================================================================
+   IKMS Conversational QA - Premium Chat Interface Styles
+   ============================================================================ */
+
+:root {
+    /* Color Palette */
+    --primary: hsl(220, 90%, 56%);
+    --primary-dark: hsl(220, 90%, 46%);
+    --primary-light: hsl(220, 90%, 66%);
+    --secondary: hsl(280, 70%, 60%);
+    --accent: hsl(160, 80%, 50%);
+    
+    /* Background Colors */
+    --bg-primary: hsl(220, 25%, 10%);
+    --bg-secondary: hsl(220, 20%, 14%);
+    --bg-tertiary: hsl(220, 20%, 18%);
+    --bg-message-user: linear-gradient(135deg, hsl(220, 90%, 56%), hsl(260, 80%, 60%));
+    --bg-message-assistant: hsl(220, 20%, 18%);
+    --bg-header: rgba(255, 255, 255, 0.02);
+    
+    /* Text Colors */
+    --text-primary: hsl(0, 0%, 95%);
+    --text-secondary: hsl(0, 0%, 70%);
+    --text-tertiary: hsl(0, 0%, 50%);
+    
+    /* Border & Shadow */
+    --border: hsl(220, 20%, 25%);
+    --border-light: hsl(220, 20%, 30%);
+    --shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.4);
+    --glow: 0 0 20px rgba(66, 153, 225, 0.3);
+}
+
+/* ============================================================================
+   Base Styles
+   ============================================================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    height: 100vh;
+    overflow: hidden;
+    line-height: 1.6;
+}
+
+/* ============================================================================
+   Layout
+   ============================================================================ */
+
+.app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+/* ============================================================================
+   Header Styles
+   ============================================================================ */
+
+.app-header {
+    padding: 1.5rem 2rem;
+    background: var(--bg-header);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2rem;
+}
+
+.header-content h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    background: linear-gradient(135deg, var(--primary-light), var(--secondary));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.25rem;
+}
+
+.logo-icon {
+    font-size: 1.75rem;
+    filter: drop-shadow(0 0 8px rgba(66, 153, 225, 0.5));
+}
+
+.subtitle {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    margin: 0;
+}
+
+.session-controls {
+    display: flex;
+    gap: 0.75rem;
+}
+
+/* ============================================================================
+   Button Styles
+   ============================================================================ */
+
+button {
+    cursor: pointer;
+    font-family: inherit;
+    border: none;
+    border-radius: 0.5rem;
+    transition: all 0.2s ease;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.btn-primary {
+    padding: 0.875rem 1.25rem;
+    background: var(--primary);
+    color: white;
+    font-size: 0.95rem;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: var(--glow);
+}
+
+.btn-primary:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-secondary {
+    padding: 0.75rem 1.25rem;
+    background: var(--bg-secondary);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    font-size: 0.875rem;
+}
+
+.btn-secondary:hover {
+    background: var(--bg-tertiary);
+    border-color: var(--border-light);
+}
+
+/* ============================================================================
+   Chat Container
+   ============================================================================ */
+
+.chat-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 2rem;
+    scroll-behavior: smooth;
+}
+
+.messages {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
+
+/* Custom Scrollbar */
+.chat-container::-webkit-scrollbar {
+    width: 8px;
+}
+
+.chat-container::-webkit-scrollbar-track {
+    background: var(--bg-primary);
+}
+
+.chat-container::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 4px;
+}
+
+.chat-container::-webkit-scrollbar-thumb:hover {
+    background: var(--border-light);
+}
+
+/* ============================================================================
+   Message Styles
+   ============================================================================ */
+
+.message {
+    display: flex;
+    gap: 1rem;
+    animation: slideIn 0.3s ease-out;
+    max-width: 85%;
+}
+
+.user-message {
+    flex-direction: row-reverse;
+    margin-left: auto;
+}
+
+.assistant-message {
+    flex-direction: row;
+}
+
+.message-avatar {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--bg-tertiary);
+    border: 2px solid var(--border);
+}
+
+.user-message .message-avatar {
+    background: var(--bg-message-user);
+    border-color: var(--primary);
+}
+
+.assistant-message .message-avatar {
+    border-color: var(--accent);
+}
+
+.message-content {
+    flex: 1;
+    padding: 1rem 1.5rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow);
+    position: relative;
+}
+
+.user-message .message-content {
+    background: var(--bg-message-user);
+    border-radius: 1rem 1rem 0.25rem 1rem;
+}
+
+.assistant-message .message-content {
+    background: var(--bg-message-assistant);
+    border: 1px solid var(--border);
+    border-radius: 1rem 1rem 1rem 0.25rem;
+}
+
+.message-content p {
+    margin: 0 0 0.75rem 0;
+}
+
+.message-content p:last-child {
+    margin-bottom: 0;
+}
+
+.message-content strong {
+    color: var(--primary-light);
+    font-weight: 600;
+}
+
+.message-content .tip {
+    font-size: 0.875rem;
+    color: var(--text-secondary);
+    padding: 0.75rem;
+    background: rgba(255, 255, 255, 0.03);
+    border-radius: 0.5rem;
+    border-left: 3px solid var(--accent);
+    margin-top: 0.75rem;
+}
+
+.welcome {
+    max-width: 100%;
+}
+
+/* History Badge */
+.history-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    background: rgba(66, 153, 225, 0.2);
+    border: 1px solid var(--primary);
+    border-radius: 1rem;
+    font-size: 0.75rem;
+    color: var(--primary-light);
+    margin-top: 0.5rem;
+}
+
+/* ============================================================================
+   Typing Indicator
+   ============================================================================ */
+
+.typing-indicator {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    padding: 0 0 1rem 0;
+}
+
+.typing-content {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 1rem 1.5rem;
+    background: var(--bg-tertiary);
+    border: 1px solid var(--border);
+    border-radius: 1rem;
+}
+
+.typing-dots {
+    display: flex;
+    gap: 0.35rem;
+}
+
+.typing-dots span {
+    width: 8px;
+    height: 8px;
+    background: var(--primary);
+    border-radius: 50%;
+    animation: bounce 1.4s infinite ease-in-out;
+}
+
+.typing-dots span:nth-child(1) {
+    animation-delay: -0.32s;
+}
+
+.typing-dots span:nth-child(2) {
+    animation-delay: -0.16s;
+}
+
+.typing-text {
+    color: var(--text-secondary);
+    font-size: 0.875rem;
+}
+
+/* ============================================================================
+   Input Area
+   ============================================================================ */
+
+.input-container {
+    padding: 1.5rem 2rem;
+    background: var(--bg-header);
+    backdrop-filter: blur(10px);
+    border-top: 1px solid var(--border);
+}
+
+.input-wrapper {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    margin-bottom: 1rem;
+}
+
+#question-input {
+    flex: 1;
+    padding: 1rem 1.25rem;
+    background: var(--bg-secondary);
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    color: var(--text-primary);
+    font-family: inherit;
+    font-size: 0.95rem;
+    resize: none;
+    max-height: 120px;
+    transition: all 0.2s;
+    line-height: 1.5;
+}
+
+#question-input:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+}
+
+#question-input::placeholder {
+    color: var(--text-tertiary);
+}
+
+/* Session Info */
+.session-info {
+    display: flex;
+    gap: 1.5rem;
+    align-items: center;
+    font-size: 0.8125rem;
+    color: var(--text-secondary);
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.info-item code {
+    font-family: 'Courier New', monospace;
+    background: var(--bg-secondary);
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.25rem;
+    color: var(--primary-light);
+    font-size: 0.75rem;
+}
+
+/* ============================================================================
+   Animations
+   ============================================================================ */
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes bounce {
+    0%, 80%, 100% {
+        transform: scale(0);
+        opacity: 0.5;
+    }
+    40% {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+/* ============================================================================
+   Utility Classes
+   ============================================================================ */
+
+.hidden {
+    display: none !important;
+}
+
+/* ============================================================================
+   Responsive Design
+   ============================================================================ */
+
+@media (max-width: 768px) {
+    .app-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    
+    .session-controls {
+        width: 100%;
+    }
+    
+    .session-controls button {
+        flex: 1;
+        justify-content: center;
+    }
+    
+    .chat-container {
+        padding: 1rem;
+    }
+    
+    .message {
+        max-width: 95%;
+    }
+    
+    .input-container {
+        padding: 1rem;
+    }
+    
+    .session-info {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+    }
+}
