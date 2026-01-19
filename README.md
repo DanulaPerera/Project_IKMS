@@ -1,398 +1,630 @@
-# Building a Knowledge-Based Q&A Application with
+# 🧠 IKMS - Intelligent Knowledge Management System
 
-# LangChain and Pinecone
+A production-ready **Multi-Agent RAG** (Retrieval-Augmented Generation) system with conversational AI capabilities. Built with LangChain, LangGraph, Pinecone, and OpenAI, this system provides intelligent question-answering over your document knowledge base with full conversation memory.
 
-In this session, we will develop a **document question-answering application** step by step. The application
-will load a knowledge document (a PDF), index its content in a vector database, and use a GPT-based
-language model to answer questions by retrieving information from the document. We’ll use **LangChain
-1.0** (with the new LangGraph framework) for building our pipeline, **Pinecone** as the vector database, and an
-OpenAI GPT-3.5 model (a "mini" GPT) for answering questions. Each part below introduces a component of
-the system with background and code snippets.
+![Python](https://img.shields.io/badge/Python-64.6%25-blue)
+![JavaScript](https://img.shields.io/badge/JavaScript-15.6%25-yellow)
+![License](https://img.shields.io/badge/license-MIT-green)
+![Status](https://img.shields.io/badge/status-active-success)
 
-## 1. Selecting and Ingesting a Knowledge Document
+---
 
-**Choosing a Document:** First, choose a PDF document that contains the knowledge your app will use (for
-example, a short research paper, a company FAQ, or a technical article). We will use a single PDF for
-simplicity. The content of this PDF will be indexed so the AI can later retrieve information from it. Ensure you
-have the file path or URL to the PDF.
+## ✨ Features
 
-**PDF Loader:** To extract text from the PDF, we use the LangChain **PyMuPDF4LLM** document loader (a
-community integration). This loader uses the PyMuPDF library to convert PDF pages into text (Markdown
-format) optimized for LLM processing. It handles complex layouts (multi-columns, tables) and outputs
-clean text. We can load the PDF either as one combined document or as separate pages. For large PDFs, it’s
-often useful to treat each page or section as a separate chunk for indexing.
+### 🤖 Multi-Agent RAG Architecture
+- **Specialized Agent Workflow**: Draft Agent → Critique Agent → Final Answer
+- **Intelligent Retrieval**: Context-aware document retrieval using Pinecone vector database
+- **Quality Assurance**: Built-in critique and refinement process for accurate answers
 
-Below is a code snippet to load a PDF file using PyMuPDF4LLMLoader. This will read the PDF and return a
-list of Document objects (one per page in this example):
+### 💬 Conversational AI
+- **Multi-Turn Conversations**: Full conversation memory and context retention
+- **Session Management**: Create, manage, and clear conversation sessions
+- **History-Aware Responses**: References previous questions and answers intelligently
+- **Follow-up Questions**: Natural conversation flow with implicit context understanding
 
-```
-# Install the integration package first:
-# pip install langchain-pymupdf4llm langchain-core
-```
-```
-fromlangchain_pymupdf4llm importPyMuPDF4LLMLoader
-```
-```
-# Initialize the PDF loader for a given file path (or URL)
-loader = PyMuPDF4LLMLoader(
-file_path="path/to/your/document.pdf",
-mode="page" # "page" mode gives one Document per page; use "single" for
-whole PDF as one Document
-)
-```
-```
-# Load the document(s) from the PDF
-docs= loader.load()
-```
-```
-1
-```
+### 🎨 Modern Web Interface
+- **Interactive Chat UI**: Clean, responsive chat interface
+- **Real-time Responses**: Live typing indicators and smooth animations
+- **Session Controls**: Easy conversation management with visual feedback
+- **Mobile-Friendly**: Responsive design that works on all devices
 
-```
-print(f"Loaded {len(docs)} documents from the PDF.")
-print(docs[0].page_content[:200]) # preview the first 200 characters of the
-first page
-```
-**Explanation:** In the code above, we create a PyMuPDF4LLMLoader with mode="page" to split the PDF
-by pages. The loader’s load() method returns a list of Document objects. Each Document contains the
-page text in page_content and metadata (like page number). If your PDF is small or if you prefer a single
-combined document, you could use mode="single" to get one Document with the entire PDF content.
-Keep in mind that very large documents should be split into smaller chunks (e.g., by page or using a text
-splitter) so that they can be embedded and retrieved efficiently.
+### 🚀 Production-Ready API
+- **FastAPI Backend**: High-performance async API with automatic documentation
+- **RESTful Endpoints**: Well-documented API for easy integration
+- **Error Handling**: Comprehensive error handling and validation
+- **CORS Support**: Configured for cross-origin requests
 
-## 2. Setting Up the Vector Database (Indexing Pipeline)
+---
 
-Once we have the text from the PDF, the next step is to **create vector embeddings** for that text and store
-them in a vector database. We’ll use **Pinecone** for this purpose. Pinecone is a fully managed **vector
-database** that excels at storing and querying high-dimensional embeddings for semantic search. In
-other words, Pinecone allows us to store the document text in vector form and quickly find relevant parts
-later using similarity search.
+## 🏗️ Architecture
 
-**Embedding Model:** To convert text into vectors (embeddings), we use a pre-trained model. A common
-choice is OpenAI’s **text-embedding-ada-002** model, which turns text into a 1536-dimensional vector
-representation. (You could also use other embedding models, e.g., from HuggingFace or Cohere, but
-we'll use OpenAI for demonstration.) We will use the LangChain OpenAIEmbeddings class to interface
-with this model. Make sure to set your OpenAI API key (e.g., via environment variable) before running the
-code.
-
-**Pinecone Setup:** You need a Pinecone account to get an API key and an environment name. In production,
-you would create a Pinecone **index** (with a certain dimension matching the embedding size). For our
-example, we'll create an index (if not already created) and then use LangChain’s integration to add our
-document vectors. Ensure the pinecone Python package is installed (pip install pinecone-
-client).
-
-Below is a code snippet to generate embeddings for the loaded documents and index them in Pinecone:
-
-```
-# Install required packages:
-# pip install pinecone-client langchain-pinecone langchain-openai
-```
-```
-import os
-import pinecone
-fromlangchain_openai importOpenAIEmbeddings
-```
-```
-# Initialize Pinecone
-pinecone_api_key = os.environ.get("PINECONE_API_KEY")or "YOUR-PINECONE-API-KEY"
-pinecone_env= os.environ.get("PINECONE_ENV") or"YOUR-PINECONE-ENV" # e.g.,
-"us-central1-gcp"
-```
-```
-2
-```
-```
-3
+```mermaid
+graph TB
+    User[User Query] --> API[FastAPI Server]
+    API --> Session[Session Manager]
+    Session --> Agent[Multi-Agent System]
+    
+    Agent --> Draft[Draft Agent]
+    Draft --> Retriever[Vector Retriever]
+    Retriever --> Pinecone[(Pinecone DB)]
+    
+    Draft --> DraftAnswer[Draft Answer]
+    DraftAnswer --> Critique[Critique Agent]
+    Critique --> Final[Final Answer]
+    
+    Final --> Session
+    Session --> API
+    API --> User
+    
+    style Agent fill:#e1f5ff
+    style Pinecone fill:#ff9999
+    style Final fill:#90EE90
 ```
 
+---
+
+## 🛠️ Tech Stack
+
+### Backend
+- **LangChain** (v1.0+) - LLM application framework
+- **LangGraph** - Agent workflow orchestration
+- **FastAPI** - Modern, fast web framework
+- **Pinecone** - Vector database for semantic search
+- **OpenAI** - GPT models for language understanding
+- **Pydantic** - Data validation and settings management
+
+### Frontend
+- **Vanilla JavaScript** - No framework dependencies
+- **Modern CSS** - Clean, responsive design
+- **HTML5** - Semantic markup
+
+### Development
+- **UV** - Fast Python package manager
+- **Python 3.11+** - Modern Python features
+- **Uvicorn** - ASGI server
+
+---
+
+## 📋 Prerequisites
+
+Before you begin, ensure you have:
+
+- **Python 3.11** or higher
+- **OpenAI API Key** ([Get one here](https://platform.openai.com/api-keys))
+- **Pinecone API Key** ([Sign up here](https://www.pinecone.io/))
+- **UV Package Manager** (recommended) or pip
+
+---
+
+## 🚀 Quick Start
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/DanulaPerera/Project_IKMS.git
+cd Project_IKMS
 ```
-pinecone.init(api_key=pinecone_api_key, environment=pinecone_env)
+
+### 2. Set Up Environment Variables
+
+Create a `.env` file in the project root:
+
+```env
+# OpenAI Configuration
+OPENAI_API_KEY=your_openai_api_key_here
+
+# Pinecone Configuration
+PINECONE_API_KEY=your_pinecone_api_key_here
+PINECONE_ENVIRONMENT=your_pinecone_environment
+PINECONE_INDEX_NAME=your_index_name
 ```
+
+### 3. Install Dependencies
+
+**Using UV (Recommended):**
+```bash
+uv sync
 ```
-# Create a Pinecone index if it doesn't exist
-index_name= "knowledge-index"
-ifindex_namenot inpinecone.list_indexes():
-pinecone.create_index(index_name, dimension=1536) # 1536 for text-
-embedding-ada-
-index= pinecone.Index(index_name)
+
+**Using pip:**
+```bash
+python -m venv .venv
+.venv\Scripts\activate  # Windows
+# or
+source .venv/bin/activate  # macOS/Linux
+
+pip install -e .
 ```
+
+### 4. Start the Server
+
+**Windows:**
+```bash
+.venv\Scripts\activate
+python -m uvicorn src.app.api:app --reload --host 0.0.0.0 --port 8000
 ```
-# Initialize the OpenAI embedding model
-embedding_model= OpenAIEmbeddings(model="text-embedding-ada-002")
+
+**macOS/Linux:**
+```bash
+source .venv/bin/activate
+python -m uvicorn src.app.api:app --reload --host 0.0.0.0 --port 8000
 ```
+
+**Or use the batch script (Windows):**
+```bash
+run_server.bat
 ```
-# Convert document pages to embeddings and upsert into Pinecone
-fromlangchain_pineconeimport PineconeVectorStore
+
+### 5. Open the Application
+
+- **Chat Interface**: http://localhost:8000/static/index.html
+- **API Documentation**: http://localhost:8000/docs
+- **Alternative Docs**: http://localhost:8000/redoc
+
+---
+
+## 📖 Usage Guide
+
+### Step 1: Index a PDF Document
+
+Before asking questions, you need to upload a PDF to the knowledge base:
+
+**Using the Web Interface (Swagger UI):**
+
+1. Navigate to http://localhost:8000/docs
+2. Find the **`POST /index-pdf`** endpoint
+3. Click **"Try it out"**
+4. Upload your PDF file
+5. Click **"Execute"**
+6. Wait for confirmation: `"PDF indexed successfully"`
+
+**Using curl:**
+
+```bash
+curl -X POST "http://localhost:8000/index-pdf" \
+  -H "accept: application/json" \
+  -H "Content-Type: multipart/form-data" \
+  -F "file=@/path/to/your/document.pdf"
 ```
+
+**Using Python:**
+
+```python
+import requests
+
+with open("document.pdf", "rb") as f:
+    response = requests.post(
+        "http://localhost:8000/index-pdf",
+        files={"file": f}
+    )
+print(response.json())
 ```
-# Use PineconeVectorStore to add documents
-vector_store= PineconeVectorStore(index=index, embedding=embedding_model,
-text_key="page_content")
-vector_store.add_documents(docs)
-```
-```
-print("Indexed all documents in Pinecone.")
-```
-**Explanation:** This code connects to Pinecone using an API key and environment, creates a new index called
-"knowledge-index" if one doesn’t exist, and initializes the OpenAI embedding model. We use
-PineconeVectorStore (from the LangChain Pinecone integration) to store the documents. The
-add_documents(docs) call will take each Document in our list, compute its embedding using
-embedding_model, and upsert the vector into the Pinecone index with the text stored as metadata
-(text_key="page_content"). After running this, our document’s content is now indexed in Pinecone as
-vectors.
+
+### Step 2: Start Asking Questions
+
+#### Option A: Using the Chat Interface (Recommended)
+
+1. Open http://localhost:8000/static/index.html
+2. Type your question in the input box
+3. Press Enter or click the send button
+4. Continue the conversation naturally!
+
+**Example Conversation:**
 
 ```
-Note: In a real application, you might want to chunk the text further (for example, splitting
-long pages into smaller paragraphs) before embedding, to improve retrieval granularity.
-LangChain offers text splitters for this. Since our example uses at most a page per chunk, we
-proceed with that for simplicity. Also, remember to keep API keys secure (e.g., use
-environment variables as shown, rather than hard-coding them).
-```
-## 3. Integrating a GPT Model for Question Answering
+You: What is this document about?
+Assistant: [Provides comprehensive answer based on the PDF]
 
-With our knowledge document indexed in Pinecone, we can now build the **question-answering (QA)
-component**. This involves using a language model (LLM) to generate answers to user queries, with the help
-of the stored knowledge. The typical approach is **Retrieval-Augmented Generation (RAG)** : when a
-question is asked, we retrieve the most relevant document chunks from Pinecone and feed those, along
-with the question, to the GPT model to help it formulate an informed answer.
+You: Can you summarize the main points?
+Assistant: [Summarizes while understanding context]
 
-**Retrieval:** We will use the LangChain retriever interface to fetch relevant chunks. The
-PineconeVectorStore we created can be turned into a retriever. For example,
+You: Tell me more about the second point
+Assistant: [Elaborates with full conversation context]
+```
 
+#### Option B: Using the API Directly
 
-vector_store.as_retriever(k=3) will allow us to retrieve the top 3 most similar chunks for any
-query.
+**Single-Shot Question (No Memory):**
 
-**LLM Choice:** We’ll use **OpenAI GPT-3.5 Turbo** via LangChain’s ChatOpenAI class as our LLM. This model
-(sometimes referred to as a “mini” GPT-4) is cost-effective and sufficient for demonstration. You could swap
-in a larger model (like GPT-4 or an open-source alternative) if needed, but GPT-3.5 is fast and works well for
-Q&A on a single document.
+```bash
+curl -X POST "http://localhost:8000/qa" \
+  -H "Content-Type: application/json" \
+  -d '{"question": "What is the main topic of the document?"}'
+```
 
-**QA Chain:** LangChain provides a convenient chain type called RetrievalQA that ties a retriever and an
-LLM together. It will handle taking a question, retrieving relevant text, and then asking the LLM to answer
-using that text. We’ll set this up with our retriever and OpenAI model.
+**Conversational Question (With Memory):**
 
-Here’s the code to create a QA chain and perform a sample query:
+```bash
+# Create a session
+curl -X POST "http://localhost:8000/qa/session"
 
-```
-fromlangchain.chat_models importChatOpenAI
-fromlangchain.chains importRetrievalQA
-```
-```
-# Initialize the chat model (ensure OPENAI_API_KEY is set in the environment)
-chat_model= ChatOpenAI(model="gpt-3.5-turbo", temperature=0)
-```
-```
-# Create a RetrievalQA chain using the chat model and our Pinecone retriever
-qa_chain= RetrievalQA.from_chain_type(
-llm=chat_model,
-chain_type="stuff", # "stuff" means it will stuff all retrieved docs into
-the prompt (simplest method)
-retriever=vector_store.as_retriever(search_kwargs={"k": 3}),
-return_source_documents=True # to return the source docs along with the
-answer (optional)
-)
-```
-```
-# Example query to test the QA system
-query= "YOUR_QUESTION_HERE" # e.g., "What is the main idea discussed in the
-document?"
-result = qa_chain({"query": query})
-```
-```
-answer = result["result"]
-sources= result.get("source_documents", [])
-print("Q:", query)
-print("A:", answer)
-ifsources:
-print(f"Retrieved {len(sources)} source document(s) for reference.")
-```
-**Explanation:** We create ChatOpenAI with the desired model and parameters (temperature 0 for
-deterministic answers). Then we build a RetrievalQA chain with chain_type="stuff", which is a
-straightforward method to send all retrieved text to the LLM. We configure the retriever to return the top 3
-chunks from our vector_store. When we call qa_chain({"query": ...}), the chain will: (a) use the
+# Ask questions (use the session_id from above)
+curl -X POST "http://localhost:8000/qa/conversation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "What is this document about?",
+    "session_id": "your-session-id"
+  }'
 
+# Ask follow-up questions
+curl -X POST "http://localhost:8000/qa/conversation" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "question": "Can you explain that in more detail?",
+    "session_id": "your-session-id"
+  }'
+```
 
-retriever to get relevant text from Pinecone for the query, (b) feed the question and that text to the GPT
-model, and (c) return the model’s answer. We also request source_documents so we can see which parts
-of the PDF were used to derive the answer (this helps with transparency and debugging). The example ends
-by printing the question and answer, and optionally info about sources.
+---
 
-At this stage, you can experiment by asking questions about the content of your PDF and verifying that the
-answers make sense. The GPT model should pull in details from the document because the retriever
-supplies those details as context.
+## 🔌 API Endpoints
 
-## 4. Creating a Backend API for the Q&A System
+### Document Management
 
-To make our application accessible, we can wrap the QA chain into a simple **backend API**. This way, a user
-(or another service) can send a question via an HTTP request and receive the AI’s answer. We'll use **FastAPI**
-(a popular Python web framework) to create a quick API endpoint. (Alternatively, Flask could be used;
-FastAPI just makes it easy to define a JSON response and test interactively.)
+#### `POST /index-pdf`
+Upload and index a PDF document into the vector database.
 
-Below is a snippet showing how to set up a FastAPI server with an endpoint to answer questions. This
-assumes that the qa_chain from the previous step is already created and available:
+**Request:**
+- Content-Type: `multipart/form-data`
+- Body: PDF file
 
+**Response:**
+```json
+{
+  "message": "PDF indexed successfully",
+  "filename": "document.pdf",
+  "pages": 10
+}
 ```
-# Install FastAPI and Uvicorn if not already:
-# pip install fastapi uvicorn
-```
-```
-fromfastapiimport FastAPI
-frompydanticimport BaseModel
-```
-```
-app= FastAPI()
-```
-```
-# Define a request schema for the question
-classQuestionRequest(BaseModel):
-query: str
-```
-```
-@app.post("/ask")
-defask_question(request: QuestionRequest):
-"""Endpoint to get an answer for a given question."""
-user_query = request.query
-result = qa_chain({"query": user_query})
-answer = result["result"]
-return {"question": user_query, "answer": answer}
-```
-```
-# To run the app, use: uvicorn main:app --reload
-```
-**Explanation:** We create a FastAPI app and define a POST endpoint /ask. Clients will send a JSON payload
-like {"query": "Your question"}. The QuestionRequest Pydantic model enforces that structure.
-In the ask_question function, we take the user_query, feed it to our qa_chain, and return the
-answer in a JSON response. We include the original question and the answer in the response for clarity. (If
 
+---
 
-needed, you could also include source information in the response.) To run this API, you would use Uvicorn
-as shown in the comment. Once running, any HTTP client (or a simple curl command) can hit [http://](http://)
-localhost:8000/ask with a question to get answers from your knowledge base.
+### Question Answering
 
-This backend setup is useful for demonstration purposes – for example, you could build a simple frontend
-or chatbot interface that calls this API. It also mimics how a production service would expose an LLM-
-powered QA system as an endpoint.
+#### `POST /qa`
+Single-shot question answering (no conversation memory).
 
-## 5. Production Considerations and Indexing Pipeline Management
-
-We have a working prototype of a knowledge-powered Q&A system. In a production-like scenario, there are
-additional considerations to ensure the system is robust and maintainable:
-
+**Request:**
+```json
+{
+  "question": "What is the main topic?"
+}
 ```
-Indexing Pipeline: In a real system, you might have a pipeline that regularly processes and indexes
-documents (especially if the knowledge base updates over time). This could be a scheduled job or a
-separate service. The steps would include converting documents to text (as we did with the PDF
-loader), splitting text into chunks, embedding those chunks, and upserting to Pinecone. For large-
-scale deployments, consider using batch upsert operations and monitoring the indexing process for
-errors.
-```
-```
-Document Updates: If the content changes or new documents are added, you’ll need to update the
-Pinecone index. Pinecone supports updating or deleting vectors by ID. Keeping track of document
-IDs and metadata (like timestamps or versions in the metadata) is helpful. In our simple example, we
-didn’t explicitly set IDs or metadata aside from the text, but in production you might store titles,
-timestamps, or source URLs in the metadata for each vector.
-```
-```
-Environment & Configuration: Ensure that sensitive keys (OpenAI, Pinecone API keys) are kept out
-of code (we used os.environ.get which is good practice). Also, configuration like index name,
-model names, etc., could be managed via config files or environment variables for flexibility.
-```
-```
-Latency and Cost: Using an embedding API and an LLM API means each question involves network
-calls. In production, you might implement caching strategies for repeated questions or popular
-documents. Also, if using a smaller model is sufficient (as we chose GPT-3.5 over GPT-4 for cost),
-that's a trade-off between cost and performance. You could further optimize by using a local
-embedding model (to avoid the overhead per embedding call) if needed.
-```
-```
-LangChain & LangGraph: With LangChain v1.0 and LangGraph, our simple chain is already quite
-straightforward. For more complex applications, LangGraph provides a way to define agent
-workflows and stateful interactions in a graph structure. In our case, we used a standard retrieval
-QA chain (no custom agent logic). The new LangChain 1.0 APIs are more modular and scalable,
-which positions us well if we later extend this app (for example, adding tools or multi-step
-reasoning). The core retrieval-augmented QA pattern remains the same in LangChain v1.0 – we
-create a retriever and an LLM chain to answer queries.
-```
-By following these steps and considerations, we have a **production-like retrieval augmented QA system**
-on a single knowledge document, implemented in a clear and incremental way. The audience (newcomers)
 
-### •
+**Response:**
+```json
+{
+  "answer": "The final refined answer",
+  "draft_answer": "Initial draft answer",
+  "context": ["Retrieved document chunk 1", "Retrieved document chunk 2"]
+}
+```
 
-### •
+---
 
-### •
+### Conversational QA
 
-### •
+#### `POST /qa/conversation`
+Ask questions with conversation memory.
 
-### •
+**Request:**
+```json
+{
+  "question": "Tell me about the methodology",
+  "session_id": "optional-session-id"
+}
+```
 
+**Response:**
+```json
+{
+  "answer": "The final answer",
+  "session_id": "abc-123-def",
+  "turn_count": 3,
+  "context_used": ["Document chunk 1", "Document chunk 2"]
+}
+```
 
-should focus on understanding each component: document loading, vector indexing, querying, and serving
-the results. With this foundation, you can scale up to multiple documents or more advanced capabilities as
-needed.
+#### `POST /qa/session`
+Create a new conversation session.
 
-## Comprehensive Prompt for AI Code Generation
+**Response:**
+```json
+{
+  "session_id": "new-session-id-123",
+  "message": "New session created"
+}
+```
 
-Finally, if using an AI coding assistant (such as Cursor AI) to develop this system, you can provide it with a
-high-level prompt that encapsulates the plan. Below is a comprehensive prompt that instructs the AI to
-generate the full application based on our design:
+#### `GET /qa/session/{session_id}/history`
+Retrieve conversation history for a session.
+
+**Response:**
+```json
+{
+  "session_id": "abc-123",
+  "history": [
+    {
+      "turn": 1,
+      "question": "What is this about?",
+      "answer": "This document discusses...",
+      "timestamp": "2026-01-19T10:30:00"
+    }
+  ]
+}
+```
+
+#### `DELETE /qa/session/{session_id}`
+Clear all history for a session.
+
+**Response:**
+```json
+{
+  "message": "Session history cleared",
+  "session_id": "abc-123"
+}
+```
+
+---
+
+## 📁 Project Structure
 
 ```
-You are an expert Python developer and AI assistant.
+Project_IKMS/
+├── frontend/                      # Web chat interface
+│   ├── index.html                # Main chat UI
+│   ├── style.css                 # Styling
+│   └── app.js                    # Frontend logic
+│
+├── src/
+│   └── app/
+│       ├── __init__.py           # App initialization
+│       ├── api.py                # FastAPI routes
+│       ├── models.py             # Pydantic models
+│       │
+│       ├── core/
+│       │   ├── config.py         # Configuration
+│       │   ├── agents/           # Agent system
+│       │   │   ├── agents.py     # Agent definitions
+│       │   │   ├── graph.py      # LangGraph workflow
+│       │   │   ├── state.py      # Agent state management
+│       │   │   └── prompts.py    # Agent prompts
+│       │   │
+│       │   ├── retrieval/        # Vector store
+│       │   │   └── vector_store.py
+│       │   │
+│       │   └── session/          # Session management
+│       │       ├── manager.py    # Session logic
+│       │       └── models.py     # Session models
+│       │
+│       └── services/             # Business logic
+│           ├── qa_service.py     # Single-shot QA
+│           └── conversational_qa_service.py
+│
+├── data/
+│   └── uploads/                  # Uploaded PDFs
+│
+├── .env                          # Environment variables
+├── .gitignore                    # Git ignore rules
+├── pyproject.toml                # Project dependencies
+├── uv.lock                       # Dependency lock file
+├── run_server.bat                # Windows server script
+├── test_api.py                   # API testing script
+│
+└── docs/                         # Documentation
+    ├── QUICK_START.md           # Quick start guide
+    ├── CONVERSATIONAL_QA_GUIDE.md
+    ├── TESTING_GUIDE.md
+    └── QUICK_TEST_GUIDE.md
 ```
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
+| Variable | Description | Required | Example |
+|----------|-------------|----------|---------|
+| `OPENAI_API_KEY` | OpenAI API key for GPT models | Yes | `sk-...` |
+| `PINECONE_API_KEY` | Pinecone API key for vector DB | Yes | `abc-123-def` |
+| `PINECONE_ENVIRONMENT` | Pinecone environment region | Yes | `us-east-1-aws` |
+| `PINECONE_INDEX_NAME` | Name of Pinecone index | Yes | `ikms-index` |
+
+### Customization
+
+#### Change the LLM Model
+
+Edit `src/app/core/config.py`:
+
+```python
+class Settings(BaseSettings):
+    openai_model: str = "gpt-4"  # Change to gpt-4, gpt-3.5-turbo, etc.
 ```
-**Task**: Build a knowledge-based Q&A application using LangChain v1.0 (with
-LangGraph), Pinecone vector DB, and OpenAI GPT-3.5. The application should load
-a PDF document, index its content into Pinecone, and answer user questions via
-an API.
+
+#### Adjust Retrieval Settings
+
+Edit `src/app/core/retrieval/vector_store.py`:
+
+```python
+def get_retriever(k: int = 5):  # Change number of chunks retrieved
+    return vector_store.as_retriever(search_kwargs={"k": k})
 ```
+
+#### Modify Agent Prompts
+
+Edit prompts in `src/app/core/agents/prompts.py` to customize agent behavior.
+
+---
+
+## 🧪 Testing
+
+### Run the Test Script
+
+```bash
+python test_api.py
 ```
-**Requirements & Steps**:
-```
-1. **Document Ingestion**: Use `langchain_pymupdf4llm` to load a PDF file. Split
-by page into Document objects.
-2. **Vector Indexing**: Initialize Pinecone (use API key and environment from
-environment variables). Create a Pinecone index (if not exists) with dimension
-1536 (for ada-002 embeddings). Use `OpenAIEmbeddings` (text-embedding-ada-002)
-to embed each document page. Store the embeddings in Pinecone, including the
-page text as metadata.
-3. **QA Chain**: Set up a LangChain `RetrievalQA` chain. Use `ChatOpenAI` with
-model `"gpt-3.5-turbo"` for the LLM. Use the Pinecone vector store as a
-retriever (top 3 results). Ensure the chain returns the answer (and source
-documents for verification).
-4. **API Server**: Create a FastAPI application with an endpoint `/ask` that
-accepts a JSON question and returns the answer. On each request, query the
-`RetrievalQA` chain and return the answer in JSON.
-5. **Testing**: Include a brief example of querying the API or chain in code to
-demonstrate functionality (e.g., ask a sample question and print the answer).
-6. **Good Practices**: Use environment variables for keys (OpenAI, Pinecone).
-Add comments in code for clarity. Structure the code in logical sections
-(loading, indexing, querying, API setup).
+
+This will:
+1. Check server health
+2. Index a sample PDF
+3. Test single-shot QA
+4. Test conversational QA with multiple turns
+
+### Using Postman
+
+Import the Postman collection:
 
 ```
-Now, please generate the Python code fulfilling the above requirements. Make
-sure the code is well-organized, uses the specified libraries and classes, and
-is suitable for a tutorial/demo setting.
+Multi-Agent-RAG-API.postman_collection.json
 ```
-Copy and paste the above prompt into the Cursor AI (or your coding assistant of choice) to guide it in
-building the application. The AI should then produce the code for the entire system, following the plan
-we've outlined. This approach demonstrates to newcomers how to translate a design into an
-implementation with the help of AI coding tools.
 
+This includes pre-configured requests for all endpoints.
 
-langchain-pymupdf4llm · PyPI
-https://pypi.org/project/langchain-pymupdf4llm/
+### Manual Testing
 
-Building a Vector Store from PDFs documents using Pinecone and LangChain | by Alex Rodrigues |
-Medium
-https://medium.com/@alexrodriguesj/building-a-vector-store-from-pdfs-documents-using-pinecone-and-langchain-
-a5c991b2a
+See the comprehensive guides:
+- [`QUICK_TEST_GUIDE.md`](QUICK_TEST_GUIDE.md) - Fast testing workflow
+- [`TESTING_GUIDE.md`](TESTING_GUIDE.md) - Detailed testing procedures
 
+---
+
+## 🎯 Use Cases
+
+### 📚 Academic Research
+- Index research papers and textbooks
+- Ask questions about methodologies, findings, and concepts
+- Get summaries and comparisons
+
+### 💼 Business Documentation
+- Upload company policies, manuals, and reports
+- Query specific procedures or guidelines
+- Extract insights from business documents
+
+### 📖 Technical Documentation
+- Index API docs, technical specs, and guides
+- Ask implementation questions
+- Get code examples and explanations
+
+### 🏥 Medical/Legal Documents
+- Upload case studies, regulations, or research
+- Query specific clauses, procedures, or findings
+- Get contextual explanations
+
+---
+
+## 🔧 Troubleshooting
+
+### Common Issues
+
+#### Server Won't Start
+
+**Problem:** Port 8000 already in use
+
+**Solution:**
+```bash
+# Change the port
+python -m uvicorn src.app.api:app --reload --port 8001
 ```
-1
+
+#### API Keys Not Working
+
+**Problem:** `401 Unauthorized` or `Invalid API key`
+
+**Solution:**
+1. Verify `.env` file exists in project root
+2. Check API keys are correct (no extra spaces)
+3. Restart the server after changing `.env`
+
+#### No Answers Returned
+
+**Problem:** Empty or error responses
+
+**Solution:**
+1. Ensure you've indexed a PDF first using `/index-pdf`
+2. Check Pinecone index exists and has data
+3. Verify OpenAI API key has credits
+
+#### Chat Interface Not Loading
+
+**Problem:** 404 error on `/static/index.html`
+
+**Solution:**
+1. Verify `frontend/` directory exists
+2. Check server logs for mounting errors
+3. Try accessing http://localhost:8000/docs instead
+
+### Debug Mode
+
+Enable detailed logging:
+
+```bash
+# Set log level to DEBUG
+export LOG_LEVEL=DEBUG  # macOS/Linux
+set LOG_LEVEL=DEBUG     # Windows
+
+python -m uvicorn src.app.api:app --reload --log-level debug
 ```
-```
-2 3
-```
+
+---
+
+## 🤝 Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+### Development Setup
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Make your changes
+4. Test thoroughly
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Open a Pull Request
+
+---
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+---
+
+## 🙏 Acknowledgments
+
+- **LangChain** - For the powerful LLM framework
+- **Pinecone** - For the vector database infrastructure
+- **OpenAI** - For GPT models
+- **FastAPI** - For the excellent web framework
+
+---
+
+## 📞 Support
+
+For questions, issues, or suggestions:
+
+- **GitHub Issues**: [Report a bug](https://github.com/DanulaPerera/Project_IKMS/issues)
+- **Discussions**: [Ask a question](https://github.com/DanulaPerera/Project_IKMS/discussions)
+
+---
+
+## 🗺️ Roadmap
+
+- [ ] Add support for multiple document types (DOCX, TXT, HTML)
+- [ ] Implement user authentication and authorization
+- [ ] Add persistent session storage (Redis/Database)
+- [ ] Support for multiple knowledge bases per user
+- [ ] Advanced analytics and usage tracking
+- [ ] Docker containerization
+- [ ] Kubernetes deployment manifests
+- [ ] Multi-language support
+
+---
+
+<div align="center">
+
+**Built with ❤️ using LangChain, LangGraph, and FastAPI**
+
+⭐ Star this repo if you find it helpful!
+
+</div>
