@@ -7,8 +7,11 @@
 
 class ChatApp {
     constructor() {
-        // API configuration
-        this.apiBase = 'http://localhost:8000';
+        // API configuration - dynamically detect base URL
+        // Use current origin when deployed, localhost for local development
+        this.apiBase = window.location.hostname === 'localhost'
+            ? 'http://localhost:8000'
+            : window.location.origin;
 
         // Session state
         this.sessionId = null;
