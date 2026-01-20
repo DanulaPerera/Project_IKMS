@@ -172,17 +172,22 @@ def conversational_retrieval_node(state: QAState) -> dict:
     - Stores the consolidated context string in state
     """
     from .prompts import CONVERSATIONAL_RETRIEVAL_PROMPT
+    from .tools import create_retrieval_tool
     
     question = state["question"]
     history = state.get("history", [])
+    session_id = state.get("session_id", "")
     
     # Format history for prompt
     history_text = format_history_for_prompt(history)
     
+    # Create session-aware retrieval tool
+    session_retrieval_tool = create_retrieval_tool(session_id)
+    
     # Create conversational retrieval agent with history-aware prompt
     conversational_retrieval_agent = create_agent(
         model=create_chat_model(),
-        tools=[retrieval_tool],
+        tools=[session_retrieval_tool],
         system_prompt=CONVERSATIONAL_RETRIEVAL_PROMPT,
     )
     

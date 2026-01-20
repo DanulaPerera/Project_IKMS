@@ -311,9 +311,10 @@ class ChatApp {
         this.showTypingIndicator();
 
         try {
-            // Create form data
+            // Create form data with file and session_id
             const formData = new FormData();
             formData.append('file', file);
+            formData.append('session_id', this.sessionId);
 
             // Upload to server
             const response = await fetch(`${this.apiBase}/index-pdf`, {

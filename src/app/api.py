@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, status
 from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
@@ -20,6 +20,7 @@ from .services.conversational_qa_service import (
     create_new_session,
     clear_session_history,
 )
+from .core.retrieval.vector_store import clear_index
 
 
 app = FastAPI(
@@ -45,6 +46,25 @@ app.add_middleware(
 frontend_path = Path(__file__).parent.parent.parent / "frontend"
 if frontend_path.exists():
     app.mount("/static", StaticFiles(directory=str(frontend_path), html=True), name="static")
+
+
+@app.on_event("startup")
+async def startup_event():
+    """Clear the Pinecone index on server startup to ensure a fresh state.
+    
+    This prevents the system from answering questions using stale data from previous sessions.
+    Users must re-upload documents after each server restart.
+    """
+    print("🧹 Clearing Pinecone index on startup...")
+    try:
+        vectors_deleted = clear_index()
+        if vectors_deleted > 0:
+            print(f"✅ Cleared {vectors_deleted} vectors from index. Starting with fresh state.")
+        else:
+            print("✅ Index was already empty. Starting with fresh state.")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not clear index on startup: {e}")
+        print("   Proceeding anyway, but old vectors may still exist.")
 
 
 @app.exception_handler(Exception)
@@ -104,20 +124,33 @@ async def qa_endpoint(payload: QuestionRequest) -> QAResponse:
 
 
 @app.post("/index-pdf", status_code=status.HTTP_200_OK)
-async def index_pdf(file: UploadFile = File(...)) -> dict:
-    """Upload a PDF and index it into the vector database.
+async def index_pdf(
+    file: UploadFile = File(...),
+    session_id: str = Form(...)
+) -> dict:
+    """Upload a PDF and index it into the vector database for a specific session.
 
     This endpoint:
-    - Accepts a PDF file upload
+    - Accepts a PDF file upload and session ID
     - Saves it to the local `data/uploads/` directory
     - Uses PyPDFLoader to load the document into LangChain `Document` objects
-    - Indexes those documents into the configured Pinecone vector store
+    - Indexes those documents into the configured Pinecone vector store in a session namespace
+    - Enforces a 3-session limit (evicts oldest if exceeded)
     """
+    from .services.session_manager import session_manager
 
     if file.content_type not in ("application/pdf",):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Only PDF files are supported.",
+        )
+
+    # Check session limit
+    if (not session_manager.has_document(session_id) and 
+        session_manager.get_session_count() >= 3):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Maximum 3 sessions with documents allowed. Please delete a session first or use an existing session.",
         )
 
     upload_dir = Path("data/uploads")
@@ -127,13 +160,20 @@ async def index_pdf(file: UploadFile = File(...)) -> dict:
     contents = await file.read()
     file_path.write_bytes(contents)
 
-    # Index the saved PDF
-    chunks_indexed = index_pdf_file(file_path)
+    # Index the saved PDF with namespace for session isolation
+    namespace = f"session_{session_id}"
+    chunks_indexed = index_pdf_file(file_path, namespace=namespace)
+
+    # Register in session manager
+    session_manager.add_session_document(session_id, file.filename, chunks_indexed)
 
     return {
         "filename": file.filename,
         "chunks_indexed": chunks_indexed,
-        "message": "PDF indexed successfully.",
+        "session_id": session_id,
+        "active_sessions": session_manager.get_session_count(),
+        "max_sessions": 3,
+        "message": f"PDF indexed successfully for session {session_id}.",
     }
 
 
