@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from fastapi import FastAPI, File, HTTPException, Request, UploadFile, status
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -66,6 +66,12 @@ async def unhandled_exception_handler(
         status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
         content={"detail": "Internal server error"},
     )
+
+
+@app.get("/")
+async def root():
+    """Redirect root URL to API documentation."""
+    return RedirectResponse(url="/docs")
 
 
 @app.post("/qa", response_model=QAResponse, status_code=status.HTTP_200_OK)
