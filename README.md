@@ -15,6 +15,7 @@ A production-ready **Multi-Agent RAG** (Retrieval-Augmented Generation) system w
 - **Specialized Agent Workflow**: Draft Agent → Critique Agent → Final Answer
 - **Intelligent Retrieval**: Context-aware document retrieval using Pinecone vector database
 - **Quality Assurance**: Built-in critique and refinement process for accurate answers
+- **GPT-4o Mini**: Powered by OpenAI's efficient `gpt-4o-mini` model by default
 
 ### 💬 Conversational AI
 - **Multi-Turn Conversations**: Full conversation memory and context retention
@@ -83,6 +84,9 @@ graph TB
 - **Python 3.11+** - Modern Python features
 - **Uvicorn** - ASGI server
 
+### Deployment
+- **Render** - Cloud application hosting
+
 ---
 
 ## 📋 Prerequisites
@@ -115,8 +119,11 @@ OPENAI_API_KEY=your_openai_api_key_here
 
 # Pinecone Configuration
 PINECONE_API_KEY=your_pinecone_api_key_here
-PINECONE_ENVIRONMENT=your_pinecone_environment
 PINECONE_INDEX_NAME=your_index_name
+
+# Optional: Model Configuration
+OPENAI_MODEL_NAME=gpt-4o-mini
+OPENAI_EMBEDDING_MODEL_NAME=text-embedding-3-large
 ```
 
 ### 3. Install Dependencies
@@ -254,6 +261,26 @@ curl -X POST "http://localhost:8000/qa/conversation" \
     "session_id": "your-session-id"
   }'
 ```
+
+---
+
+## ☁️ Deployment
+
+### Deploying to Render
+
+This project is configured for easy deployment on [Render](https://render.com/).
+
+1. **Fork/Push** this repository to your GitHub.
+2. **Create a New Web Service** on Render.
+3. **Connect GitHub** and select this repository.
+4. **Environment Variables**: Add the following in the Render dashboard:
+    - `OPENAI_API_KEY`
+    - `PINECONE_API_KEY`
+    - `PINECONE_INDEX_NAME`
+    - `PYTHON_VERSION`: `3.11.0`
+5. **Deploy**: Render will automatically build (using `render.yaml`) and deploy the service.
+
+The `render.yaml` file included in the repository handles the build command (`pip install -r requirements.txt`) and start command.
 
 ---
 
@@ -408,6 +435,7 @@ Project_IKMS/
 ├── .gitignore                    # Git ignore rules
 ├── pyproject.toml                # Project dependencies
 ├── uv.lock                       # Dependency lock file
+├── render.yaml                   # Render deployment config
 ├── run_server.bat                # Windows server script
 ├── test_api.py                   # API testing script
 │
@@ -428,8 +456,9 @@ Project_IKMS/
 |----------|-------------|----------|---------|
 | `OPENAI_API_KEY` | OpenAI API key for GPT models | Yes | `sk-...` |
 | `PINECONE_API_KEY` | Pinecone API key for vector DB | Yes | `abc-123-def` |
-| `PINECONE_ENVIRONMENT` | Pinecone environment region | Yes | `us-east-1-aws` |
 | `PINECONE_INDEX_NAME` | Name of Pinecone index | Yes | `ikms-index` |
+| `OPENAI_MODEL_NAME` | LLM Model Name | No | `gpt-4o-mini` |
+| `OPENAI_EMBEDDING_MODEL_NAME` | Embedding Model Name | No | `text-embedding-3-large` |
 
 ### Customization
 
@@ -439,7 +468,7 @@ Edit `src/app/core/config.py`:
 
 ```python
 class Settings(BaseSettings):
-    openai_model: str = "gpt-4"  # Change to gpt-4, gpt-3.5-turbo, etc.
+    openai_model_name: str = "gpt-4o"  # Change to gpt-4o, gpt-4o-mini, etc.
 ```
 
 #### Adjust Retrieval Settings
